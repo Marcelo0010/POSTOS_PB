@@ -85,14 +85,6 @@ for produto in produtos_unicos:
         ).add_to(camada)
     m1.add_child(camada)
 
-# === Adicionar usinas ===
-for _, row in gdf_usinas.iterrows():
-    folium.Marker(
-        location=[row["Latitude"], row["Longitude"]],
-        popup=f"<b>{row['Nome']}</b>",
-        icon=folium.Icon(color="darkgreen", icon="industry", prefix="fa")
-    ).add_to(m1)
-
 folium.LayerControl(collapsed=False).add_to(m1)
 m1.save("assets/mapa_postos_usinas.html")
 
