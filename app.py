@@ -11,7 +11,10 @@ from branca.element import MacroElement
 from jinja2 import Template
 import dash_bootstrap_components as dbc
 from folium.plugins import MarkerCluster
+import os
 
+# === Criar pasta 'assets' se ela não existir ===
+os.makedirs("assets", exist_ok=True)
 # === Função para conversão de coordenadas ===
 def dms_to_decimal(dms):
     try:
