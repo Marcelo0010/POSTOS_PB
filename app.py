@@ -119,7 +119,7 @@ app.layout = html.Div(style={"backgroundColor": "#e0f2e9", "padding": "20px"}, c
     html.H1("Painel de Tancagem e Localização de Postos na Paraíba", 
             style={"textAlign": "center", "color": "#004d40", "fontWeight": "bold", "fontSize": "36px"}),
 
-    html.P("Este dashboard interativo mostra a distribuição dos tanques de combustível nos postos do estado da Paraíba, incluindo estatísticas por produto e por município, bem como a localização exata dos estabelecimentos. ",
+    html.P("O Sindalcool Disponibiliza o mapeamento interativo que mostra a distribuição dos tanques de combustível e postos do estado da Paraíba, incluindo estatísticas por produto e por município, bem como a localização exata dos estabelecimentos. ",
            style={"textAlign": "center", "fontSize": "18px"}),
 
     dbc.Row([
