@@ -36,7 +36,6 @@ def dms_to_decimal(dms):
 df = pd.read_excel("base1.xlsx", sheet_name="Folha1")
 df["LATITUDE"] = df["LATITUDE"].apply(dms_to_decimal)
 df["LONGITUDE"] = df["LONGITUDE"].apply(dms_to_decimal)
-df = df.dropna(subset=["LATITUDE", "LONGITUDE"])
 df.rename(columns={"MUNICÍPIO": "Municipio"}, inplace=True)
 
 # === Estatísticas ===
@@ -47,9 +46,9 @@ tancagem_por_produto = df.groupby("Produto")["Tancagem (m³)"].sum().reset_index
 tancagem_por_mun_prod = df.groupby(["Municipio", "Produto"])["Tancagem (m³)"].sum().reset_index()
 
 # === Gráficos ===
-graf_tancagem_produto = px.bar(tancagem_por_produto, x="Produto", y="Tancagem (m³)", title="Tancagem por Produto")
+graf_tancagem_produto = px.bar(tancagem_por_produto, x="Produto", y="Tancagem (m³)", title="Tancagem por Produto", height= 400)
 graf_tancagem_mun = px.bar(tancagem_por_mun_prod, x="Municipio", y="Tancagem (m³)", color="Produto",
-                             title="Tancagem por Produto e Município")
+                             title="Tancagem por Produto e Município", height= 600)
 
 # === Tabela lateral ===
 tabela_tancagem = dash_table.DataTable(
@@ -58,10 +57,10 @@ tabela_tancagem = dash_table.DataTable(
     style_table={"overflowX": "auto", "height": "400px", "overflowY": "auto"},
     style_cell={"textAlign": "left"},
 )
-
+df = df.dropna(subset=["LATITUDE", "LONGITUDE"])
 # === Mapa interativo com camadas ===
 m1 = folium.Map(location=[df["LATITUDE"].mean(), df["LONGITUDE"].mean()], zoom_start=8)
-cores = ["green","red", "gray", "orange", "purple", "black", "blue", "pink", "cadetblue"]
+cores = ["green", "red", "gray", "orange", "purple", "black", "blue", "pink", "cadetblue"]
 produtos_unicos = df["Produto"].dropna().unique()
 cores_produto = {produto: cores[i % len(cores)] for i, produto in enumerate(produtos_unicos)}
 
@@ -69,7 +68,12 @@ for produto in produtos_unicos:
     camada = folium.FeatureGroup(name=f"Postos - {produto}", show=True)
     df_filtrado = df[df["Produto"] == produto]
     for _, row in df_filtrado.iterrows():
-        popup = f"<b>{row['Razão Social']}</b><br>Produto: {produto}<br>Tancagem: {row['Tancagem (m³)']} m³"
+        popup = f"""
+        <b>{row['Razão Social']}</b><br>
+        Produto: {produto}<br>
+        Tanque: {row.get('Nome Tanque', 'Desconhecido')}<br>
+        Tancagem: {row['Tancagem (m³)']} m³
+        """
         folium.CircleMarker(
             location=[row["LATITUDE"], row["LONGITUDE"]],
             radius=max(5, row["Tancagem (m³)"] / 500),
@@ -81,18 +85,37 @@ for produto in produtos_unicos:
         ).add_to(camada)
     m1.add_child(camada)
 
+# === Adicionar usinas ===
+for _, row in gdf_usinas.iterrows():
+    folium.Marker(
+        location=[row["Latitude"], row["Longitude"]],
+        popup=f"<b>{row['Nome']}</b>",
+        icon=folium.Icon(color="darkgreen", icon="industry", prefix="fa")
+    ).add_to(m1)
+
 folium.LayerControl(collapsed=False).add_to(m1)
 m1.save("assets/mapa_postos_usinas.html")
 
-# === Mapa com clusters ===
+# === Mapa com clusters usando bolinhas (CircleMarker) ===
 m2 = folium.Map(location=[df["LATITUDE"].mean(), df["LONGITUDE"].mean()], zoom_start=8)
 cluster = MarkerCluster().add_to(m2)
 for _, row in df.iterrows():
-    folium.Marker(
+    popup = f"""
+    <b>{row['Razão Social']}</b><br>
+    Produto: {row.get('Produto', 'N/A')}<br>
+    Tanque: {row.get('Nome Tanque', 'Desconhecido')}<br>
+    Tancagem: {row.get('Tancagem (m³)', '0')} m³
+    """
+    folium.CircleMarker(
         location=[row["LATITUDE"], row["LONGITUDE"]],
-        popup=row["Razão Social"],
-        icon=folium.Icon(color="blue")
+        radius=max(5, row["Tancagem (m³)"] / 500),
+        popup=folium.Popup(popup, max_width=300),
+        color="blue",
+        fill=True,
+        fill_color="blue",
+        fill_opacity=0.7,
     ).add_to(cluster)
+
 m2.save("assets/mapa_simples.html")
 
 # === App DASH ===
@@ -124,8 +147,8 @@ app.layout = html.Div(style={"backgroundColor": "#e0f2e9", "padding": "20px"}, c
     ], className="mb-4"),
 
     dbc.Row([
-        dbc.Col(dcc.Graph(figure=graf_tancagem_produto), width=6),
-        dbc.Col(dcc.Graph(figure=graf_tancagem_mun), width=6),
+        dbc.Col(dcc.Graph(figure=graf_tancagem_produto), width=12),
+        dbc.Col(dcc.Graph(figure=graf_tancagem_mun), width=12),
     ]),
 
     html.H4("Tabela de Tancagem por Produto e Município", style={"marginTop": "30px", "color": "#004d40"}),
@@ -135,7 +158,7 @@ app.layout = html.Div(style={"backgroundColor": "#e0f2e9", "padding": "20px"}, c
     html.H4("Mapa Interativo por Produto (com Camadas)", style={"marginTop": "20px", "color": "#004d40"}),
     html.Iframe(src="/assets/mapa_postos_usinas.html", width="100%", height="500"),
 
-    html.H4("Mapa com Cluster de Postos", style={"marginTop": "30px", "color": "#004d40"}),
+    html.H4("Mapa com Cluster de Tanques", style={"marginTop": "30px", "color": "#004d40"}),
     html.Iframe(src="/assets/mapa_simples.html", width="100%", height="500"),
 ])
 
