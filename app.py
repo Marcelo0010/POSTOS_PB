@@ -97,6 +97,7 @@ m2.save("assets/mapa_simples.html")
 
 # === App DASH ===
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server
 app.title = "Painel de Tancagem - Paraíba"
 
 app.layout = html.Div(style={"backgroundColor": "#e0f2e9", "padding": "20px"}, children=[
@@ -138,5 +139,6 @@ app.layout = html.Div(style={"backgroundColor": "#e0f2e9", "padding": "20px"}, c
     html.Iframe(src="/assets/mapa_simples.html", width="100%", height="500"),
 ])
 
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run_server(debug=True, host="0.0.0.0")
